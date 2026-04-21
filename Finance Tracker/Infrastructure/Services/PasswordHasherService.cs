@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Finance_Tracker.Infrastructure.Services.Contracts;
+using Microsoft.AspNetCore.Identity;
 
 namespace Finance_Tracker.Infrastructure.Services
 {

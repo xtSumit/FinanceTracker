@@ -1,6 +1,6 @@
 ﻿using Finance_Tracker.Application.DTOs;
 using Finance_Tracker.Infrastructure;
-using Finance_Tracker.Infrastructure.Services;
+using Finance_Tracker.Infrastructure.Services.Contracts;
 using Finance_Tracker.Models.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

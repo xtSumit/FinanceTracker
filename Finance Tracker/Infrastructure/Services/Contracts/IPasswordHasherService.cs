@@ -1,4 +1,4 @@
-﻿namespace Finance_Tracker.Infrastructure.Services
+﻿namespace Finance_Tracker.Infrastructure.Services.Contracts
 {
     public interface IPasswordHasherService
     {
