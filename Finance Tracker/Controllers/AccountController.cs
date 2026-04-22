@@ -22,5 +22,17 @@ namespace Finance_Tracker.Controllers
 
             return Ok(new { message = "User registered successfully" });
         }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginRequest request)
+        {
+            string jwtToken =  await _authService.LoginAsync(request);
+            
+
+            return Ok(new
+            {
+                token = jwtToken
+            });
+        }
     }
 }

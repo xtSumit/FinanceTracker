@@ -1,4 +1,5 @@
-﻿using Finance_Tracker.Models.Entities;
+﻿using Finance_Tracker.Infrastructure.Services.Contracts;
+using Finance_Tracker.Models.Entities;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace Finance_Tracker.Infrastructure.Services
 {
-    public class TokenService
+    public class TokenService : ITokenService
     {
         private readonly IConfiguration _config;
 

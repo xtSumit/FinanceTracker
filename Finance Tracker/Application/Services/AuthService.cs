@@ -11,11 +11,29 @@ namespace Finance_Tracker.Application.Services
     {
         private readonly FinanceTrackerDbContext _context;
         private readonly IPasswordHasherService _passwordHasher;
+        private readonly ITokenService _token;
 
-        public AuthService(FinanceTrackerDbContext context, IPasswordHasherService passwordHasher)
+        public AuthService(FinanceTrackerDbContext context, IPasswordHasherService passwordHasher, ITokenService token)
         {
             _context = context;
             _passwordHasher = passwordHasher;
+            _token = token;
+        }
+
+        public async Task<string> LoginAsync(LoginRequest request)
+        {
+            var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.Email == request.Email);
+
+            if (user == null)
+                throw new Exception("Invalid email or password");
+
+            var isValid = _passwordHasher.Verify(user.PasswordHash, request.Password);
+
+            if (!isValid)
+                throw new Exception("Invalid email or password");
+
+            return _token.GenerateToken(user);
         }
 
         public async Task RegisterAsync(RegisterRequest request)
