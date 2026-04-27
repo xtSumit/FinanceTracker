@@ -1,4 +1,5 @@
 ﻿using Finance_Tracker.Infrastructure.Services.Contracts;
+using Finance_Tracker.Models.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace Finance_Tracker.Infrastructure.Services
@@ -6,9 +7,9 @@ namespace Finance_Tracker.Infrastructure.Services
 
     public class PasswordHasherService : IPasswordHasherService
     {
-        private readonly IPasswordHasher<object> _hasher;
+        private readonly IPasswordHasher<User> _hasher;
 
-        public PasswordHasherService(IPasswordHasher<object> hasher)
+        public PasswordHasherService(IPasswordHasher<User> hasher)
         {
             _hasher = hasher;
         }
@@ -18,7 +19,7 @@ namespace Finance_Tracker.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(password))
                 throw new ArgumentException("Password cannot be null or empty.", nameof(password));
 
-            return _hasher.HashPassword(null, password);
+            return _hasher.HashPassword(new User(), password);
         }
 
         public bool Verify(string hashedPassword, string providedPassword)
@@ -26,7 +27,7 @@ namespace Finance_Tracker.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(hashedPassword) || string.IsNullOrWhiteSpace(providedPassword))
                 throw new ArgumentException("Password cannot be null or empty.");
 
-            var result = _hasher.VerifyHashedPassword(null, hashedPassword, providedPassword);
+            var result = _hasher.VerifyHashedPassword(new User(), hashedPassword, providedPassword);
             return result == PasswordVerificationResult.Success;
         }
     }
