@@ -1,5 +1,7 @@
 ﻿using Finance_Tracker.Application.DTOs;
 using Finance_Tracker.Infrastructure;
+using Finance_Tracker.Infrastructure.Contracts;
+using Finance_Tracker.Infrastructure.Services;
 using Finance_Tracker.Infrastructure.Services.Contracts;
 using Finance_Tracker.Models.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -9,21 +11,20 @@ namespace Finance_Tracker.Application.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly FinanceTrackerDbContext _context;
+        private readonly IUserRepository _userRepository;
         private readonly IPasswordHasherService _passwordHasher;
         private readonly ITokenService _token;
 
-        public AuthService(FinanceTrackerDbContext context, IPasswordHasherService passwordHasher, ITokenService token)
+        public AuthService(IUserRepository userRepository, IPasswordHasherService passwordHasher, ITokenService token)
         {
-            _context = context;
+            _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _token = token;
         }
 
-        public async Task<string> LoginAsync(LoginRequest request)
+        public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.Email == request.Email);
+            var user = await _userRepository.GetByEmailAsync(request.Email);
 
             if (user == null)
                 throw new Exception("Invalid email or password");
@@ -33,12 +34,23 @@ namespace Finance_Tracker.Application.Services
             if (!isValid)
                 throw new Exception("Invalid email or password");
 
-            return _token.GenerateToken(user);
+            var accessToken = _token.GenerateToken(user);
+
+            var refreshToken = _token.GenerateRefreshToken();
+            user.RefreshTokens.Add(refreshToken);
+
+            await _userRepository.SaveChangesAsync();
+
+            return new AuthResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token
+            };
         }
 
         public async Task RegisterAsync(RegisterRequest request)
         {
-            var existingUser = await _context.Users.FirstOrDefaultAsync(x => x.Email == request.Email);
+            var existingUser = await _userRepository.GetByEmailAsync(request.Email);
 
             if (existingUser != null)
                 throw new Exception("User already exists. Please use a different email.");
@@ -50,8 +62,46 @@ namespace Finance_Tracker.Application.Services
                 PasswordHash = _passwordHasher.Hash(request.Password)
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            await _userRepository.AddUserAsync(user);
+            await _userRepository.SaveChangesAsync();
+        }
+
+        public async Task<AuthResponse> RefreshAsync(string token)
+        {
+            var user = await _userRepository.GetUserByRefreshTokenAsync(token);
+            var refreshToken = user?.RefreshTokens.FirstOrDefault(x => x.Token == token);
+
+            if (refreshToken == null || refreshToken.IsRevoked || refreshToken.ExpiresAt < DateTime.UtcNow)
+                throw new Exception("Invalid refresh token");
+
+            refreshToken.IsRevoked = true;
+            refreshToken.RevokedAt = DateTime.UtcNow;
+
+            var newRefreshToken = _token.GenerateRefreshToken();
+            user.RefreshTokens.Add(newRefreshToken);
+
+            var accessToken = _token.GenerateToken(user);
+
+            await _userRepository.SaveChangesAsync();
+
+            return new AuthResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = newRefreshToken.Token
+            };
+        }
+
+        public async Task LogoutAsync(string token)
+        {
+            var user = await _userRepository.GetUserByRefreshTokenAsync(token);
+            var refreshToken = user?.RefreshTokens.FirstOrDefault(x => x.Token == token);
+
+            if (refreshToken != null)
+            {
+                refreshToken.IsRevoked = true;
+                refreshToken.RevokedAt = DateTime.UtcNow; //To track when the token was revoked
+                await _userRepository.SaveChangesAsync();
+            }
         }
     }
 }

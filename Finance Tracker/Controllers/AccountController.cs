@@ -43,12 +43,12 @@ namespace Finance_Tracker.Controllers
                 if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
                     return BadRequest(new { message = "Invalid input parameters!" });
 
-                string jwtToken = await _authService.LoginAsync(request);
+                var authResponse = await _authService.LoginAsync(request);
 
-                if (string.IsNullOrEmpty(jwtToken))
+                if (authResponse == null)
                     return Unauthorized(new { message = "Invalid email or password." });
 
-                return Ok(new { token = jwtToken });
+                return Ok(authResponse);
             }
             // TODO: Add custom exception handling for invalid credentials if implemented in AuthService
             catch (Exception ex)
@@ -56,6 +56,20 @@ namespace Finance_Tracker.Controllers
                 // Log exception here
                 return StatusCode(500, new { message = "An unexpected error occurred. Please try again later." });
             }
+        }
+
+        [HttpPost("token_refresh")]
+        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
+        {
+            var result = await _authService.RefreshAsync(refreshToken);
+            return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] string refreshToken)
+        {
+            await _authService.LogoutAsync(refreshToken);
+            return NoContent();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Finance_Tracker.Models.Entities;
+﻿using Finance_Tracker.Models;
+using Finance_Tracker.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Finance_Tracker.Infrastructure
@@ -11,6 +12,7 @@ namespace Finance_Tracker.Infrastructure
 
         public DbSet<User> Users { get; set; }
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -36,6 +38,8 @@ namespace Finance_Tracker.Infrastructure
                 entity.Property(x => x.Role)
                       .HasDefaultValue("User");
             });
+
+            modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token);
         }
 
     }
